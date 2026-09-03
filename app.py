@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-st.set_page_config(page_title="Smart Krishi Procurement Platform", page_icon="🌾", layout="wide")
+st.set_page_config(page_title= Krishi Procurement Platform", page_icon="🌾", layout="wide")
 
 # Sidebar Language Selection
 lang = st.sidebar.selectbox("🌐 Select Language / भाषा चुनें", ["Hindi (हिंदी)", "English"])
