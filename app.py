@@ -136,7 +136,7 @@ with lang_col2:
 st.divider()
 
 # ==========================================
-# 2. FIRST PAGE: AADHAAR REGISTRATION & LOGIN
+# 2. FIRST PAGE: REGISTRATION & LOGIN
 # ==========================================
 if not st.session_state.user_registered:
     st.markdown(f'<div class="section-title">🔐 {"किसान पंजीकरण / गेट पास टोकन" if is_hi else "Farmer Registration & Gate Pass"}</div>', unsafe_allow_html=True)
@@ -301,10 +301,10 @@ else:
         
         st.warning("⚠️ " + ("गेट 1 पर भारी भीड़ है। सुरक्षा गार्ड केवल टोकन धारक किसानों को गेट 2 से डाइवर्ट कर रहे हैं।" if is_hi else "Gate 1 heavy rush. Guards diverting token holders to Gate 2."))
 
-    # --- MODULE 4: VOICE ASSISTANT ---
+    # --- MODULE 4: VOICE ASSISTANT (WITH REAL AUDIO PLAYER) ---
     elif choice in ["🎙️ आवाज़ सहायक (Voice Assistant)", "🎙️ Voice Assistant for Farmers"]:
-        st.markdown(f'<div class="section-title">🎙️ {"आवाज़ सहायक (Smart Voice Simulator)" if is_hi else "Voice Assistant for Farmers"}</div>', unsafe_allow_html=True)
-        st.info("💡 " + ("चूंकि वेब ब्राउज़र में डायरेक्ट माइक रिकॉर्डिंग समर्थित नहीं है, आप नीचे दिए गए कॉमन सवालों में से कोई भी चुनकर तुरंत ऑडियो और टेक्स्ट उत्तर प्राप्त कर सकते हैं:" if is_hi else "Select any query below to instantly get audio & text response:"))
+        st.markdown(f'<div class="section-title">🎙️ {"आवाज़ सहायक (Audio Assistant)" if is_hi else "Voice Assistant for Farmers"}</div>', unsafe_allow_html=True)
+        st.info("💡 " + ("नीचे अपना सवाल चुनें और उत्तर सुनने के लिए बटन दबाएं:" if is_hi else "Select your query below and tap to listen:"))
         
         voice_query = st.selectbox("अपना सवाल चुनें:" if is_hi else "Select your query:", [
             "1. गेहूं का आज का भाव क्या है?",
@@ -316,13 +316,26 @@ else:
             "3. What is my Guard Pass Token ID?"
         ])
         
-        if st.button("🔊 " + ("उत्तर सुनें और देखें" if is_hi else "Play Audio Response"), type="primary", use_container_width=True):
+        if st.button("🔊 " + ("ऑडियो उत्तर चलाएं" if is_hi else "Play Audio Response"), type="primary", use_container_width=True):
             if "bhav" in voice_query or "rate" in voice_query or "गेहूं" in voice_query:
-                st.success("🔊 " + ("[ऑडियो उत्तर]: आज गेहूं का सरकारी MSP भाव ₹2,275 प्रति क्विंटल है।" if is_hi else "[Audio Output]: Today's Wheat MSP rate is ₹2,275 per quintal."))
+                ans_text = "आज गेहूं का सरकारी MSP भाव 2275 रुपये प्रति क्विंटल है।" if is_hi else "Today's Wheat MSP rate is 2275 rupees per quintal."
             elif "token" in voice_query or "टोकन" in voice_query or "पास" in voice_query:
-                st.info(f"🔊 [ऑडियो उत्तर]: आपका वेरीफाइड गेट पास टोकन आईडी है: {user['token_id']}। इसे गेट पर गार्ड को दिखाएं।")
+                ans_text = f"आपका वेरीफाइड गेट पास टोकन आईडी है: {user['token_id']}। इसे गेट पर दिखाएं।" if is_hi else f"Your verified token ID is {user['token_id']}."
             else:
-                st.warning("🔊 " + ("[ऑडियो उत्तर]: मंडी गेट 1 पर भीड़ अधिक है, कृपया गेट 2 से प्रवेश करें।" if is_hi else "[Audio Output]: High rush at Gate 1, please enter through Gate 2."))
+                ans_text = "मंडी गेट 1 पर भारी भीड़ है, कृपया गेट 2 से प्रवेश करें।" if is_hi else "High rush at Gate 1, enter through Gate 2."
+
+            st.success(ans_text)
+            
+            # HTML5 Audio TTS fallback using browser speech synthesis
+            st.markdown(f"""
+                <div style="background:#F0FDF4; padding:15px; border-radius:12px; border:1px solid #22C55E; text-align:center; margin-top:10px;">
+                    <p style="font-weight:700; color:#15803D; margin-bottom:8px;">🔊 Phone Audio Player</p>
+                    <audio controls autoplay style="width:100%;">
+                        <source src="https://translate.google.com/translate_tts?ie=UTF-8&q={urllib_quote_safe(ans_text)}&tl={'hi' if is_hi else 'en'}&client=tw-ob" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            """, unsafe_allow_html=True)
 
     # --- MODULE 5: SLOT BOOKING ---
     elif choice in ["📱 टाइम स्लॉट बुकिंग", "📱 Time Slot Booking"]:
@@ -353,7 +366,7 @@ else:
                 <h4 style="margin:0; color:#16A34A;">✅ {"भुगतान सफल / PAYMENT CREDITED" if is_hi else "PAYMENT SUCCESSFUL"}</h4>
                 <h2 style="margin:8px 0; color:#0F172A;">₹ 1,02,375</h2>
                 <p style="margin:0; color:#475569; font-size:0.9rem;">
-                    {"45 क्विंटल गेहूं की बिक्री पर राशि आपके आधार-लिंक खाते me जमा कर दी गई है।" if is_hi else "Amount credited for 45 Qtl Wheat sale to your Aadhaar-linked bank account."}
+                    {"45 क्विंटल गेहूं की बिक्री पर राशि आपके आधार-लिंक खाते में जमा कर दी गई है।" if is_hi else "Amount credited for 45 Qtl Wheat sale to your Aadhaar-linked bank account."}
                 </p>
             </div>
         """, unsafe_allow_html=True)
