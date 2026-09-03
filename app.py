@@ -281,4 +281,103 @@ else:
             st.markdown(f"""
                 <div class="content-card" style="text-align:center; background:#F8FAFC;">
                     <h4 style="margin:0; color:#475569;">{"अनुमानित मूल्य" if is_hi else "Estimated Selling Rate"}</h4>
-                    <h1 style="color
+                    <h1 style="color:#15803D; margin:10px 0; font-size:2.4rem;">₹ {final_price}</h1>
+                    <p style="margin:0; font-weight:600; color:{'#16A34A' if bonus>=0 else '#DC2626'};">
+                        {"क्वालिटी बोनस:" if is_hi else "Quality Adjustment:"} ₹ {bonus} / क्विंटल
+                    </p>
+                    <p style="font-size:0.82rem; color:#64748B; margin-top:8px;">Base MSP: ₹ {base_msp}</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+    # --- MODULE 3: RUSH HEATMAP ---
+    elif choice in ["🗺️ लाइव मंडी भीड़ और ट्रैफिक", "🗺️ Live Mandi Rush & Traffic Map"]:
+        st.markdown(f'<div class="section-title">🗺️ {"लाइव मंडी भीड़ एवं गेट स्थिति" if is_hi else "Live Mandi Congestion & Zone Heatmap"}</div>', unsafe_allow_html=True)
+        depot = st.selectbox("मंडी केंद्र:" if is_hi else "Mandi Hub:", depot_list)
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("गेट 1 (धर्मकांटा)" if is_hi else "Gate 1 (Weighbridge)", "85%", delta="भारी भीड़" if is_hi else "HIGH RUSH", delta_color="inverse")
+        col2.metric("गेट 2 (अनलोडिंग)" if is_hi else "Gate 2 (Unloading)", "40%", delta="सामान्य" if is_hi else "NORMAL", delta_color="normal")
+        col3.metric("पार्र्किंग ज़ोन" if is_hi else "Parking Zone", "95%", delta="फूल" if is_hi else "CRITICAL", delta_color="inverse")
+        
+        st.warning("⚠️ " + ("गेट 1 पर भारी भीड़ है। सुरक्षा गार्ड केवल टोकन धारक किसानों को गेट 2 से डाइवर्ट कर रहे हैं।" if is_hi else "Gate 1 heavy rush. Guards diverting token holders to Gate 2."))
+
+    # --- MODULE 4: VOICE ASSISTANT ---
+    elif choice in ["🎙️ आवाज़ सहायक (Voice Assistant)", "🎙️ Voice Assistant for Farmers"]:
+        st.markdown(f'<div class="section-title">🎙️ {"आवाज़ सहायक (Smart Voice Simulator)" if is_hi else "Voice Assistant for Farmers"}</div>', unsafe_allow_html=True)
+        st.info("💡 " + ("चूंकि वेब ब्राउज़र में डायरेक्ट माइक रिकॉर्डिंग समर्थित नहीं है, आप नीचे दिए गए कॉमन सवालों में से कोई भी चुनकर तुरंत ऑडियो और टेक्स्ट उत्तर प्राप्त कर सकते हैं:" if is_hi else "Select any query below to instantly get audio & text response:"))
+        
+        voice_query = st.selectbox("अपना सवाल चुनें:" if is_hi else "Select your query:", [
+            "1. गेहूं का आज का भाव क्या है?",
+            "2. केंद्रीय मंडी में भीड़ कितनी है?",
+            "3. मेरा गार्ड पास टोकन नंबर क्या है?"
+        ] if is_hi else [
+            "1. What is today's wheat rate?",
+            "2. What is the current rush in central mandi?",
+            "3. What is my Guard Pass Token ID?"
+        ])
+        
+        if st.button("🔊 " + ("उत्तर सुनें और देखें" if is_hi else "Play Audio Response"), type="primary", use_container_width=True):
+            if "bhav" in voice_query or "rate" in voice_query or "गेहूं" in voice_query:
+                st.success("🔊 " + ("[ऑडियो उत्तर]: आज गेहूं का सरकारी MSP भाव ₹2,275 प्रति क्विंटल है।" if is_hi else "[Audio Output]: Today's Wheat MSP rate is ₹2,275 per quintal."))
+            elif "token" in voice_query or "टोकन" in voice_query or "पास" in voice_query:
+                st.info(f"🔊 [ऑडियो उत्तर]: आपका वेरीफाइड गेट पास टोकन आईडी है: {user['token_id']}। इसे गेट पर गार्ड को दिखाएं।")
+            else:
+                st.warning("🔊 " + ("[ऑडियो उत्तर]: मंडी गेट 1 पर भीड़ अधिक है, कृपया गेट 2 से प्रवेश करें।" if is_hi else "[Audio Output]: High rush at Gate 1, please enter through Gate 2."))
+
+    # --- MODULE 5: SLOT BOOKING ---
+    elif choice in ["📱 टाइम स्लॉट बुकिंग", "📱 Time Slot Booking"]:
+        st.markdown(f'<div class="section-title">📱 {"मंडी आगमन टाइम स्लॉट बुकिंग" if is_hi else "Mandi Arrival Time Slot Booking"}</div>', unsafe_allow_html=True)
+        
+        with st.form("slot_form"):
+            mandi = st.selectbox("मंडी केंद्र:" if is_hi else "Mandi Center:", depot_list)
+            crop = st.selectbox("फसल:" if is_hi else "Crop:", ["गेहूं @ ₹2,275/क्विंटल", "धान @ ₹2,183/क्विंटल"] if is_hi else ["Wheat @ ₹2,275/Qtl", "Paddy @ ₹2,183/Qtl"])
+            slot_time = st.selectbox("समय स्लॉट:" if is_hi else "Preferred Time Slot:", ["08:00 AM - 10:00 AM", "10:00 AM - 12:00 PM", "02:00 PM - 04:00 PM"])
+            slot_date = st.date_input("तारीख:" if is_hi else "Date:")
+            
+            book_btn = st.form_submit_button("स्लॉट पक्का करें 📅" if is_hi else "Confirm Slot Booking 📅", type="primary", use_container_width=True)
+            if book_btn:
+                st.success("🎉 " + (f"स्लॉट बुक हो गया! टोकन आईडी {user['token_id']} के साथ {slot_date} को {slot_time} पर पहुंचे।" if is_hi else f"Slot Booked! Arrive on {slot_date} at {slot_time} with Token {user['token_id']}."))
+
+    # --- MODULE 6: RUSH ALERTS ---
+    elif choice in ["🚨 मंडी भीड़ एवं देरी अलर्ट", "🚨 Live Rush & Delay Alerts"]:
+        st.markdown(f'<div class="section-title">🚨 {"मंडी भीड़ और सुरक्षा अलर्ट" if is_hi else "Live Mandi Rush & Delay Status"}</div>', unsafe_allow_html=True)
+        st.error("🔴 " + ("गेट 1 पर भारी भीड़ है।" if is_hi else "Heavy Rush reported at Gate 1."))
+        st.info("🛡️ " + ("सुरक्षा गार्ड केवल टोकन पास दिखाने पर ही एंट्री दे रहे हैं।" if is_hi else "Guards allowing entry strictly with valid Token Pass."))
+
+    # --- MODULE 7: PAYMENT STATUS ---
+    elif choice in ["💳 DBT भुगतान स्थिति", "💳 DBT Payment Status"]:
+        st.markdown(f'<div class="section-title">💳 {"डीबीटी (DBT) भुगतान स्थिति" if is_hi else "Direct Benefit Transfer (DBT) Payment Status"}</div>', unsafe_allow_html=True)
+        
+        st.markdown(f"""
+            <div class="content-card" style="border-left: 5px solid #16A34A;">
+                <h4 style="margin:0; color:#16A34A;">✅ {"भुगतान सफल / PAYMENT CREDITED" if is_hi else "PAYMENT SUCCESSFUL"}</h4>
+                <h2 style="margin:8px 0; color:#0F172A;">₹ 1,02,375</h2>
+                <p style="margin:0; color:#475569; font-size:0.9rem;">
+                    {"45 क्विंटल गेहूं की बिक्री पर राशि आपके आधार-लिंक खाते me जमा कर दी गई है।" if is_hi else "Amount credited for 45 Qtl Wheat sale to your Aadhaar-linked bank account."}
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # --- MODULE 8: WEATHER ---
+    elif choice in ["🌤️ मौसम पूर्वानुमान", "🌤️ Mandi Weather Forecast"]:
+        st.markdown(f'<div class="section-title">🌤️ {"मंडी मौसम रिपोर्ट" if is_hi else "Mandi Local Weather System"}</div>', unsafe_allow_html=True)
+        city = st.text_input("शहर / ज़िला:" if is_hi else "District/City:", user['district'] if user['district'] else "Delhi")
+        if st.button("मौसम जांचें" if is_hi else "Get Weather Report", type="primary"):
+            try:
+                res = requests.get(f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid=bd5e378503939ddaee76f12ad7a97608&units=metric").json()
+                if res.get("cod") == 200:
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("तापमान" if is_hi else "Temp", f"{res['main']['temp']} °C")
+                    col2.metric("नमी" if is_hi else "Humidity", f"{res['main']['humidity']} %")
+                    col3.metric("मौसम" if is_hi else "Condition", res['weather'][0]['description'].capitalize())
+                else:
+                    st.error("❌ " + ("शहर नहीं मिला!" if is_hi else "City not found!"))
+            except:
+                st.error("⚠️ Weather API error.")
+
+    # --- MODULE 9: IVR / SMS ---
+    elif choice in ["📞 Non-Smartphone (IVR / SMS)", "📞 Non-Smartphone (IVR / SMS)"]:
+        st.markdown(f'<div class="section-title">📞 {"गैर-स्मार्टफोन (IVR / SMS) सेवा" if is_hi else "Non-Smartphone (IVR / SMS) System"}</div>', unsafe_allow_html=True)
+        st.write(f"**रजिस्टर्ड मोबाइल:** {user['mobile']}")
+        if st.button("टोकन पास का SMS भेजें" if is_hi else "Send Token Pass via SMS", type="primary"):
+            st.success(f"💬 SMS Sent to {user['mobile']}: 'Aapka Gate Entry Pass Token: {user['token_id']} hai. Mandi guard ko ise dikhayein.'")
