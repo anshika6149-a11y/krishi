@@ -330,3 +330,4 @@ else:
         c1.metric("Temperature", "28 °C")
         c2.metric("Humidity", "42 %")
         c3.metric("Condition", "Clear & Sunny ☀️")
+
