@@ -1,0 +1,564 @@
+import streamlit as st
+import random
+from io import BytesIO
+
+# Page Configuration
+st.set_page_config(
+    page_title="Krishi Platform - Multilingual Portal", 
+    page_icon="🌾", 
+    layout="centered"
+)
+
+# Clean & Professional UI Styling
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    html, body, [class*="css"]  { font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    .app-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #2563EB 100%);
+        padding: 18px; border-radius: 14px; color: white; text-align: center; margin-bottom: 15px;
+        box-shadow: 0px 4px 15px rgba(37, 99, 235, 0.2);
+    }
+    .app-header h1 { color: #FFFFFF !important; font-size: 1.6rem; font-weight: 800; margin: 0; }
+    .app-header p { color: #93C5FD; margin: 4px 0 0 0; font-size: 0.8rem; }
+
+    .pass-box {
+        background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+        border: 2px solid #22C55E; padding: 14px; border-radius: 12px; text-align: center; margin-bottom: 15px;
+    }
+    .section-box { color: #0F172A; font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+    .stButton>button { border-radius: 8px !important; font-weight: 600 !important; }
+    </style>
+""", unsafe_allow_html=True)
+
+# Session State Initialization
+if 'lang' not in st.session_state:
+    st.session_state.lang = 'en'
+if 'user_registered' not in st.session_state:
+    st.session_state.user_registered = False
+if 'user_data' not in st.session_state:
+    st.session_state.user_data = {}
+if 'slot_booked' not in st.session_state:
+    st.session_state.slot_booked = False
+if 'transport_booked' not in st.session_state:
+    st.session_state.transport_booked = False
+
+# Fully Comprehensive 22-Language Pack Dictionary
+LANG_PACK = {
+    'en': {
+        "title": "Digital Mandi & Logistics Portal", "nav": "📌 Menu", 
+        "m1": "🌾 Live Rates & AI Check", "m2": "🗺️ Traffic & Queue", 
+        "m3": "📱 Slot & Gate Pass", "m4": "🚚 Transport & SMS", 
+        "m5": "🎙️ Voice Assistant", "m6": "💳 DBT Payment Tracking", 
+        "m7": "🌤️ Weather Forecast",
+        "reg_title": "🔐 Farmer Registration", "name_lbl": "Full Name *", 
+        "id_lbl": "ID Number *", "mob_lbl": "Mobile Number (10 Digits) *", 
+        "state_lbl": "Select State *", "dist_lbl": "District *", "vill_lbl": "Select Village *",
+        "reg_btn": "Register Now 🚀"
+    },
+    'hi': {
+        "title": "डिजिटल मंडी और ट्रांसपोर्ट पोर्टल", "nav": "📌 मेनू", 
+        "m1": "🌾 लाइव भाव और AI जांच", "m2": "🗺️ भीड़ और कतार स्थिति", 
+        "m3": "📱 स्लॉट और गेट पास", "m4": "🚚 गाड़ी और SMS बुकिंग", 
+        "m5": "🎙️ बोलकर पूछें (वॉइस)", "m6": "💳 पैसा (DBT) ट्रैकिंग", 
+        "m7": "🌤️ मौसम की जानकारी",
+        "reg_title": "🔐 किसान पंजीकरण", "name_lbl": "पूरा नाम *", 
+        "id_lbl": "पहचान संख्या *", "mob_lbl": "मोबाइल नंबर (10 अंक) *", 
+        "state_lbl": "राज्य चुनें *", "dist_lbl": "जिला चुनें *", "vill_lbl": "गांव चुनें *",
+        "reg_btn": "पंजीकरण करें 🚀"
+    },
+    'bn': {
+        "title": "ডিজিটাল মান্ডি এবং লজিস্টিকস", "nav": "📌 মেনু", 
+        "m1": "🌾 লাইভ দর এবং AI গ্রেডিং", "m2": "🗺️ ট্রাফিক এবং কিউ", 
+        "m3": "📱 স্লট এবং গেট পাস", "m4": "🚚 পরিবহন ও SMS বুকিং", 
+        "m5": "🎙️ ভয়েস অ্যাসিস্ট্যান্ট", "m6": "💳 পেমেন্ট ট্র্যাকিং", 
+        "m7": "🌤️ আবহাওয়া পূর্বাভাস",
+        "reg_title": "🔐 কৃষক নিবন্ধন", "name_lbl": "সম্পূর্ণ নাম *", 
+        "id_lbl": "আইডি নম্বর *", "mob_lbl": "মোবাইল নম্বর *", 
+        "state_lbl": "রাজ্য নির্বাচন করুন *", "dist_lbl": "জেলা *", "vill_lbl": "গ্রাম নির্বাচন করুন *",
+        "reg_btn": "নিবন্ধন করুন 🚀"
+    },
+    'mr': {
+        "title": "डिजिटल बाजार आणि वाहतूक पोर्टल", "nav": "📌 मेनू", 
+        "m1": "🌾 लाईव्ह भाव आणि तपासणी", "m2": "🗺️ रहदारी आणि रांग", 
+        "m3": "📱 वेळ आणि पास", "m4": "🚚 वाहन व SMS बुकिंग", 
+        "m5": "🎙️ बोलून माहिती घ्या", "m6": "💳 पैशांची स्थिती", 
+        "m7": "🌤️ हवामान अंदाज",
+        "reg_title": "🔐 शेतकरी नोंदणी", "name_lbl": "पूर्ण नाव *", 
+        "id_lbl": "ओळख क्रमांक *", "mob_lbl": "मोबाइल नंबर *", 
+        "state_lbl": "राज्य निवडा *", "dist_lbl": "जिल्हा *", "vill_lbl": "गाव निवडा *",
+        "reg_btn": "नोंदणी करा 🚀"
+    },
+    'pa': {
+        "title": "ਡਿਜੀਟਲ ਮੰਡੀ ਅਤੇ ਟਰਾਂਸਪੋਰਟ", "nav": "📌 ਮੀਨੂ", 
+        "m1": "🌾 ਲਾਈ브 ਭਾਅ ਅਤੇ ਜਾਂਚ", "m2": "🗺️ ਟ੍ਰੈਫਿਕ ਅਤੇ ਲਾਈਨ", 
+        "m3": "📱 ਸਮံ ਅਤੇ ਪਾਸ", "m4": "🚚 ਗੱਡੀ ਅਤੇ SMS ਬੁਕਿੰਗ", 
+        "m5": "🎙️ ਬੋਲ ਕੇ ਪੁੱਛੋ", "m6": "💳 ਪੇਮੈਂਟ ਸਥਿਤੀ", 
+        "m7": "🌤️ ਮੌਸਮ ਦੀ ਜਾਣਕਾਰੀ",
+        "reg_title": "🔐 ਕਿਸਾਨ ਰਜਿਸਟ੍ਰੇਸ਼ਨ", "name_lbl": "ਪੂਰਾ ਨਾਮ *", 
+        "id_lbl": "ਆਈਡੀ ਨੰਬਰ *", "mob_lbl": "ਮੋਬਾਈਲ ਨੰਬਰ *", 
+        "state_lbl": "ਰਾਜ ਚੁਣੋ *", "dist_lbl": "ਜ਼ਿਲ੍ਹਾ *", "vill_lbl": "ਪਿੰਡ ਚੁਣੋ *",
+        "reg_btn": "ਰਜਿਸਟਰ ਕਰੋ 🚀"
+    },
+    'gu': {
+        "title": "ડિજિટલ મંડી અને પરિવહન", "nav": "📌 મેનુ", 
+        "m1": "🌾 લાઇવ ભાવ અને ચકાસણી", "m2": "🗺️ ટ્રાફિક અને લાઇન", 
+        "m3": "📱 સ્લોટ અને પાસ", "m4": "🚚 વાહન અને SMS બુકિંગ", 
+        "m5": "🎙️ અવાજ સહાયક", "m6": "💳 ચુકવણી ટ્રેકિંગ", 
+        "m7": "🌤️ હવામાન અહેવાલ",
+        "reg_title": "🔐 ખેડૂત નોંધણી", "name_lbl": "પૂરું નામ *", 
+        "id_lbl": "આઈડી નંબર *", "mob_lbl": "મોબાઈલ નંબર *", 
+        "state_lbl": "રાજ્ય પસંદ કરો *", "dist_lbl": "જિલ્લો *", "vill_lbl": "ગામ પસંદ કરો *",
+        "reg_btn": "નોંધણી કરો 🚀"
+    },
+    'ta': {
+        "title": "டிஜிட்டல் மண்டி மற்றும் போக்குவரத்து", "nav": "📌 பட்டி", 
+        "m1": "🌾 நேரலை விலைகள் & AI சோதனை", "m2": "🗺️ போக்குவரத்து & வரிசை", 
+        "m3": "📱 ஸ்லாட் & கேட் பாஸ்", "m4": "🚚 போக்குவரத்து & SMS", 
+        "m5": "🎙️ குரல் உதவியாளர்", "m6": "💳 DBT கட்டண கண்காணிப்பு", 
+        "m7": "🌤️ வானிலை முன்னறிவிப்பு",
+        "reg_title": "🔐 விவசாயி பதிவு", "name_lbl": "முழு பெயர் *", 
+        "id_lbl": "ஐடி எண் *", "mob_lbl": "மொபைல் எண் *", 
+        "state_lbl": "மாநிலத்தைத் தேர்ந்தெடுக்கவும் *", "dist_lbl": "மாவட்டம் *", "vill_lbl": "கிராமத்தைத் தேர்ந்தெடுக்கவும் *",
+        "reg_btn": "இப்போது பதிவு செய்யவும் 🚀"
+    },
+    'te': {
+        "title": "డిజిటల్ మండి & లాజిస్టిక్స్ పోర్టల్", "nav": "📌 మెను", 
+        "m1": "🌾 లైవ్ ధరలు & AI తనిఖీ", "m2": "🗺️ ట్రాఫిక్ & క్యూ", 
+        "m3": "📱 స్లాట్ & గేట్ పాస్", "m4": "🚚 రవాణా & SMS", 
+        "m5": "🎙️ వాయిస్ అసిస్టెంట్", "m6": "💳 DBT చెల్లింపు ట్రాకింగ్", 
+        "m7": "🌤️ వాతావరణ అంచనా",
+        "reg_title": "🔐 రైతుల నమోదు", "name_lbl": "పూర్తి పేరు *", 
+        "id_lbl": "ఐడి నంబర్ *", "mob_lbl": "మొబైల్ నంబర్ *", 
+        "state_lbl": "రాష్ట్రాన్ని ఎంచుకోండి *", "dist_lbl": "జిల్లా *", "vill_lbl": "గ్రామాన్ని ఎంచుకోండి *",
+        "reg_btn": "ఇప్పుడే నమోదు చేసుకోండి 🚀"
+    },
+    'kn': {
+        "title": "ಡಿಜಿಟಲ್ ಮಂಡಿ ಮತ್ತು ಲಾಜಿಸ್ಟಿಕ್ಸ್", "nav": "📌 ಮೆನು", 
+        "m1": "🌾 ಲೈವ್ ದರಗಳು ಮತ್ತು AI ಪರಿಶೀಲನೆ", "m2": "🗺️ ದಟ್ಟಣೆ ಮತ್ತು ಸರತಿ ಸಾಲು", 
+        "m3": "📱 ಸ್ಲಾಟ್ ಮತ್ತು ಗೇಟ್ ಪಾಸ್", "m4": "🚚 ಸಾರಿಗೆ ಮತ್ತು SMS", 
+        "m5": "🎙️ ಧ್ವನಿ ಸಹಾಯಕ", "m6": "💳 DBT ಪಾವತಿ ಟ್ರ್ಯಾಕಿಂಗ್", 
+        "m7": "🌤️ ಹವಾಮಾನ ಮುನ್ಸೂಚನೆ",
+        "reg_title": "🔐 ರೈತ ನೋಂದಣಿ", "name_lbl": "ಪೂರ್ಣ ಹೆಸರು *", 
+        "id_lbl": "ಐಡಿ ಸಂಖ್ಯೆ *", "mob_lbl": "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ *", 
+        "state_lbl": "ರಾಜ್ಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ *", "dist_lbl": "ಜಿಲ್ಲೆ *", "vill_lbl": "ಗ್ರಾಮವನ್ನು ಆಯ್ಕೆಮಾಡಿ *",
+        "reg_btn": "ಈಗ ನೋಂದಾಯಿಸಿ 🚀"
+    },
+    'ml': {
+        "title": "ഡിജിറ്റൽ മണ്ടി & ലോജിസ്റ്റിക്സ് പോർട്ടൽ", "nav": "📌 മെനു", 
+        "m1": "🌾 തത്സമയ വിലകളും AI പരിശോധനയും", "m2": "🗺️ ട്രാഫിക് & ക്യൂ", 
+        "m3": "📱 സ്ലോട്ടും ഗേറ്റ് പാസും", "m4": "🚚 ഗതാഗതവും SMS ഉം", 
+        "m5": "🎙️ വോയിസ് അസിസ്റ്റന്റ്", "m6": "💳 DBT പേയ്മെന്റ് ട്രാക്കിംഗ്", 
+        "m7": "🌤️ കാലാവസ്ഥ പ്രവചനം",
+        "reg_title": "🔐 കർഷക രജിസ്ട്രേഷൻ", "name_lbl": "മുഴുവൻ പേര് *", 
+        "id_lbl": "ഐഡി നമ്പർ *", "mob_lbl": "മൊബൈൽ നമ്പർ *", 
+        "state_lbl": "സംസ്ഥാനം തിരഞ്ഞെടുക്കുക *", "dist_lbl": "ജില്ല *", "vill_lbl": "ഗ്രാമം തിരഞ്ഞെടുക്കുക *",
+        "reg_btn": "ഇപ്പോൾ രജിസ്റ്റർ ചെയ്യുക 🚀"
+    },
+    'or': {
+        "title": "ଡିଜିଟାଲ ମଣ୍ଡି ଏବଂ ଲଜିଷ୍ଟିକ୍ସ", "nav": "📌 ମେନୁ", 
+        "m1": "🌾 ଲାଇଭ୍ ଦର ଏବଂ AI ଯାଞ୍ଚ", "m2": "🗺️ ଟ୍ରାଫିକ୍ ଏବଂ କ୍ୟୁ", 
+        "m3": "📱 ସ୍ଲଟ୍ ଏବଂ ଗେଟ୍ ପାସ୍", "m4": "🚚 ପରିବହନ ଏବଂ SMS", 
+        "m5": "🎙️ ଭଏସ୍ ଆସିଷ୍ଟାଣ୍ଟ", "m6": "💳 DBT ପେମେଣ୍ଟ ଟ୍ରାକିଂ", 
+        "m7": "🌤️ ପାଣିପାଗ ପୂର୍ବାନୁମାନ",
+        "reg_title": "🔐 କୃଷକ ପଞ୍ଜୀକରଣ", "name_lbl": "ପୂରା ନାମ *", 
+        "id_lbl": "ଆଇଡି ନମ୍ବର *", "mob_lbl": "ମୋବାଇଲ୍ ନମ୍ବର *", 
+        "state_lbl": "ରାଜ୍ୟ ଚୟନ କରନ୍ତୁ *", "dist_lbl": "ଜିଲ୍ଲା *", "vill_lbl": "ଗାଁ ଚୟନ କରନ୍ତୁ *",
+        "reg_btn": "ବର୍ତ୍ତମାନ ପଞ୍ଜୀକରଣ କରନ୍ତୁ 🚀"
+    },
+    'ur': {
+        "title": "ڈیجیٹل منڈی اور لاجسٹکس پورٹل", "nav": "📌 مینو", 
+        "m1": "🌾 لائیو ریٹس اور AI چیک", "m2": "🗺️ ٹریفک اور قطار", 
+        "m3": "📱 سلاٹ اور گیٹ پاس", "m4": "🚚 ٹرانسپورٹ اور SMS", 
+        "m5": "🎙️ وائس اسسٹنٹ", "m6": "💳 DBT ادائیگی سے متعلق", 
+        "m7": "🌤️ موسم کی پیشگوئی",
+        "reg_title": "🔐 کسان رجسٹریشن", "name_lbl": "پورا نام *", 
+        "id_lbl": "آئی ڈی نمبر *", "mob_lbl": "موبائل نمبر *", 
+        "state_lbl": "ریاست منتخب کریں *", "dist_lbl": "ضلع *", "vill_lbl": "گاؤں منتخب کریں *",
+        "reg_btn": "ابھی رجسٹر کریں 🚀"
+    },
+    'as': {
+        "title": "ডিজিটেল মাণ্ডিত আৰু লজিষ্টিকছ", "nav": "📌 মেনু", 
+        "m1": "🌾 লাইভ দাম আৰু AI পৰীক্ষা", "m2": "🗺️ ট্ৰাফিক আৰু শাৰী", 
+        "m3": "📱 স্লট আৰু গেট পাছ", "m4": "🚚 পৰিবহণ আৰু SMS", 
+        "m5": "🎙️ ভইচ এচিষ্টেণ্ট", "m6": "💳 DBT পেমেণ্ট ট্ৰেকিং", 
+        "m7": "🌤️ বতৰৰ আগজাননী",
+        "reg_title": "🔐 কৃষক পঞ্জীয়ন", "name_lbl": "সম্পূৰ্ণ নাম *", 
+        "id_lbl": "আই ডি নম্বৰ *", "mob_lbl": "ম’বাইল নম্বৰ *", 
+        "state_lbl": "ৰাজ্য বাছনি কৰক *", "dist_lbl": "জিলা *", "vill_lbl": "গাওঁ বাছনি কৰক *",
+        "reg_btn": "এতিয়া পঞ্জীয়ন কৰক 🚀"
+    },
+    'ne': {
+        "title": "डिजिटल मन्डी र लजिस्टिक्स पोर्टल", "nav": "📌 मेनु", 
+        "m1": "🌾 लाइभ मूल्य र AI जाँच", "m2": "🗺️ ट्राफिक र लाइन", 
+        "m3": "📱 स्लट र गेट पास", "m4": "🚚 यातायात र SMS", 
+        "m5": "🎙️ आवाज सहायक", "m6": "💳 DBT भुक्तानी ट्र्याकिङ", 
+        "m7": "🌤️ मौसम पूर्वानुमान",
+        "reg_title": "🔐 किसान दर्ता", "name_lbl": "पूरा नाम *", 
+        "id_lbl": "आईडी नम्बर *", "mob_lbl": "मोबाइल नम्बर *", 
+        "state_lbl": "राज्य चयन गर्नुहोस् *", "dist_lbl": "जिल्ला *", "vill_lbl": "गाउँ चयन गर्नुहोस् *",
+        "reg_btn": "अहिले दर्ता गर्नुहोस् 🚀"
+    },
+    'sd': {
+        "title": "ڊجيٽل منڊي ۽ لاجسٽڪس پورٹل", "nav": "📌 مينيو", 
+        "m1": "🌾 لائيو اگھه ۽ AI چيڪ", "m2": "🗺️ ٽريفڪ ۽ قطار", 
+        "m3": "📱 سلاٽ ۽ گيٽ پاس", "m4": "🚚 ٽرانسپورٽ ۽ SMS", 
+        "m5": "🎙️ وائيس اسسٽنٽ", "m6": "💳 DBT ادائگي جي ٽريڪنگ", 
+        "m7": "🌤️ موسم جي πρόβλεψη",
+        "reg_title": "🔐 هاري رجजिस्ट్రేشن", "name_lbl": "پورو نالو *", 
+        "id_lbl": "آءِ ڊي نمبر *", "mob_lbl": "موبائيل نمبر *", 
+        "state_lbl": "رياست چونڊيو *", "dist_lbl": "ضلعو *", "vill_lbl": "ڳوٺ چونڊيو *",
+        "reg_btn": "هاڻي رجسٽر ڪريو 🚀"
+    },
+    'ks': {
+        "title": "ڈیجیٹل منڈی تہٕ لاجسٛٹکس", "nav": "📌 مینو", 
+        "m1": "🌾 لایو ریٹس تہٕ AI چیک", "m2": "🗺️ ٹریفک تہٕ قطار", 
+        "m3": "📱 سلاٹ تہٕ گیٹ پاس", "m4": "🚚 ٹرانسپورٹ تہٕ SMS", 
+        "m5": "🎙️ وایس اسسٛٹنٹ", "m6": "💳 DBT پے منٹ ٹریکنگ", 
+        "m7": "🌤️ موسم پیشگوئی",
+        "reg_title": "🔐 کسان رجسٹریشن", "name_lbl": "پورا ناو *", 
+        "id_lbl": "آئی ڈی نمبر *", "mob_lbl": "موبائل نمبر *", 
+        "state_lbl": "ریاست ژاریو *", "dist_lbl": "ضلع *", "vill_lbl": "گام ژاریو *",
+        "reg_btn": "رجسٹر کرو 🚀"
+    },
+    'kok': {
+        "title": "डिजिटल मोंडी आनी वाहतूक पोर्टल", "nav": "📌 मेनू", 
+        "m1": "🌾 लायव्ह भाव आनी तपासणी", "m2": "🗺️ येरादारी आनी रांग", 
+        "m3": "📱 वेळ आनी पास", "m4": "🚚 वाहन आनी SMS बुकिंग", 
+        "m5": "🎙️ व्हॉइस असिस्टंट", "m6": "💳 भुगतान ट्रॅकिंग", 
+        "m7": "🌤️ हवामान अंदाज",
+        "reg_title": "🔐 शेतकार नोंदणी", "name_lbl": "पूरा नांव *", 
+        "id_lbl": "ओळख क्रमांक *", "mob_lbl": "मोबाइल नंबर *", 
+        "state_lbl": "राज्य वेंचून काढा *", "dist_lbl": "जिल्लो *", "vill_lbl": "गांव वेंचून काढा *",
+        "reg_btn": "नोंदणी करा 🚀"
+    },
+    'mni': {
+        "title": "ডিজিটেল মণ্ডী অমসুং লজিস্টিকস্", "nav": "📌 মেনু", 
+        "m1": "🌾 লাইভ মমল অমসুং AI চেক", "m2": "🗺️ ট্রাফিক অমসুং লাইন", 
+        "m3": "📱 স্লট অমসুং গেট পাস", "m4": "🚚 লমদম ক্বারি অমসুং SMS", 
+        "m5": "🎙️ ভয়েস এসিষ্টেন্ট", "m6": "💳 DBT পেমেন্ট ট্র্যাকিং", 
+        "m7": "🌤️ নুংথিলগী ফিভম",
+        "reg_title": "🔐 লৌমী রেজিষ্ট্রেসন", "name_lbl": "মপুং ফানা মমিং *", 
+        "id_lbl": "আইডি নম্বার *", "mob_lbl": "মবাইল নম্বার *", 
+        "state_lbl": "স্টেট খনবা *", "dist_lbl": "জিলা *", "vill_lbl": "খুল খনবা *",
+        "reg_btn": "রেজিষ্টার তৌবা 🚀"
+    },
+    'bodo': {
+        "title": "डिजिटल मन्डि आरो लजिस्टिक्स", "nav": "📌 मेनू", 
+        "m1": "🌾 लाइभ दाम आरो AI नायबिजिरनाय", "m2": "🗺️ ट्राफिक आरो लाइन", 
+        "m3": "📱 स्लट आरो गेट पास", "m4": "🚚 लामा आरो SMS", 
+        "m5": "🎙️ ভয়েস এসিষ্টেন্ট", "m6": "💳 DBT পেমেণ্ট ট্ৰেকিং", 
+        "m7": "🌤️ বেলি-বেমাথ খौरां",
+        "reg_title": "🔐 किसान रेजिष्ट्रेसन", "name_lbl": "पुर्गा मुंख्लां *", 
+        "id_lbl": "आईडी नम्बर *", "mob_lbl": "मोबाइल नम्बर *", 
+        "state_lbl": "राज्य बाथ्राय *", "dist_lbl": "जिल्ला *", "vill_lbl": "खुंथि बाथ्राय *",
+        "reg_btn": "रेजिष्टर खालाम 🚀"
+    },
+    'doi': {
+        "title": "डिजिटल मंडी ते परिवहन पोर्टल", "nav": "📌 मेनू", 
+        "m1": "🌾 लाइव भाव ते AI जांच", "m2": "🗺️ भीड़ ते कतार", 
+        "m3": "📱 स्लॉट ते गेट पास", "m4": "🚚 वाहन ते SMS बुकिंग", 
+        "m5": "🎙️ आवाज सहायक", "m6": "💳 DBT भुगतान ट्रैकिंग", 
+        "m7": "🌤️ मौसम दी जानकारी",
+        "reg_title": "🔐 किसान पंजीकरण", "name_lbl": "पूरा नां *", 
+        "id_lbl": "पहचान संख्या *", "mob_lbl": "मोबाइल नंबर *", 
+        "state_lbl": "राज्य चुणो *", "dist_lbl": "जिला *", "vill_lbl": "पिंड चुणो *",
+        "reg_btn": "पंजीकरण करो 🚀"
+    },
+    'mai': {
+        "title": "डिजिटल मण्डी आ ट्रांसपोर्ट पोर्टल", "nav": "📌 मेनू", 
+        "m1": "🌾 लाइव दाम आ AI जाँच", "m2": "🗺️ भीर आ लाइन", 
+        "m3": "📱 स्लॉट आ गेट पास", "m4": "🚚 गाड़ी आ SMS बुकिंग", 
+        "m5": "🎙️ बोलक पूछू (वॉइस)", "m6": "💳 पइसा (DBT) ट्रैकिंग", 
+        "m7": "🌤️ मौसमक जानकारी",
+        "reg_title": "🔐 किसान पंजीकरण", "name_lbl": "पूरा नाम *", 
+        "id_lbl": "पहचान संख्या *", "mob_lbl": "मोबाइल नंबर *", 
+        "state_lbl": "राज्य चुनू *", "dist_lbl": "जिला *", "vill_lbl": "गाँव चुनू *",
+        "reg_btn": "पंजीकरण करू 🚀"
+    },
+    'sat': {
+        "title": "डिजिटल मण्डी आर ट्रांसपोर्ट पोर्टल", "nav": "📌 मेनू", 
+        "m1": "🌾 लाइव दाम आर AI जाँच", "m2": "🗺️ भीड़ आर कतार", 
+        "m3": "📱 स्लॉट आर गेट पास", "m4": "🚚 गाड़ी आर SMS बुकिंग", 
+        "m5": "🎙️ वॉयस असिस्टेंट", "m6": "💳 DBT पेमेंट ट्रैकिंग", 
+        "m7": "🌤️ मौसम जानकारी",
+        "reg_title": "🔐 किसान रेजिस्ट्रेशन", "name_lbl": "पूरा नाम *", 
+        "id_lbl": "आईडी नंबर *", "mob_lbl": "मोबाइल नंबर *", 
+        "state_lbl": "राज्य बाछव *", "dist_lbl": "जिला *", "vill_lbl": "आदा बाछव *",
+        "reg_btn": "रेजिस्टर मी 🚀"
+    }
+}
+
+all_22_langs = {
+    'en': 'English', 'hi': 'हिन्दी (Hindi)', 'bn': 'বাংলা (Bengali)',
+    'mr': 'मराठी (Marathi)', 'pa': 'ਪੰਜਾਬੀ (Punjabi)', 'gu': 'ગુજરાતી (Gujarati)',
+    'ta': 'தமிழ் (Tamil)', 'te': 'తెలుగు (Telugu)', 'kn': 'ಕನ್ನಡ (Kannada)',
+    'ml': 'മലയാളം (Malayalam)', 'or': 'ଓଡ଼ିଆ (Odia)', 'ur': 'اردو (Urdu)',
+    'as': 'অসমীয়া (Assamese)', 'ne': 'नेपाली (Nepali)', 'sd': 'سنڌي (Sindhi)',
+    'ks': 'कॉशुर (Kashmiri)', 'kok': 'कोंकणी (Konkani)', 'mni': 'মৈতৈলোন্ (Manipuri)',
+    'bodo': 'बर\' (Bodo)', 'doi': 'डोगरी (Dogri)', 'mai': 'मैथिली (Maithili)', 'sat': 'संताली (Santali)'
+}
+
+# Global Top Bar for 22-Language Selection
+st.sidebar.markdown("### 🌐 Language / भाषा चुनें")
+selected_lang_name = st.sidebar.selectbox(
+    "Choose Language:", 
+    list(all_22_langs.values()), 
+    index=list(all_22_langs.keys()).index(st.session_state.lang) if st.session_state.lang in all_22_langs else 0
+)
+
+for code, name in all_22_langs.items():
+    if name == selected_lang_name:
+        if st.session_state.lang != code:
+            st.session_state.lang = code
+            st.rerun()
+
+curr_lang = st.session_state.lang
+t = LANG_PACK.get(curr_lang, LANG_PACK['en'])
+
+# App Header Banner
+st.markdown(f"""
+    <div class="app-header">
+        <h1>KRISHI PLATFORM</h1>
+        <p>🌾 {t['title']}</p>
+    </div>
+""", unsafe_allow_html=True)
+
+STATE_DISTRICTS = {
+    "Gujarat": {
+        "Ahmedabad APMC": ["Vinchhiya", "Bavla", "Dholka", "Sanand", "Detroj"],
+        "Surat APMC": ["Mandvi", "Bardoli", "Kamrej", "Palsana", "Olpad"],
+        "Rajkot APMC": ["Gondal", "Jetpur", "Dhoraji", "Jasdan", "Upleta"]
+    },
+    "Punjab": {
+        "Ludhiana APMC": ["Machhiwara", "Payal", "Samrala", "Jagraon", "Khanna"],
+        "Amritsar APMC": ["Ajnala", "Baba Bakala", "Rayya", "Chogawan", "Majitha"],
+        "Patiala APMC": ["Nabha", "Rajpura", "Samana", "Patran", "Ghanaur"]
+    },
+    "Uttar Pradesh": {
+        "Lucknow APMC": ["Kakori", "Malihabad", "Banthra", "Chinhat", "Itaunja"],
+        "Varanasi APMC": ["Pindra", "Cholapur", "Baragaon", "Sevapuri", "Kashi Vidyapith"],
+        "Kanpur APMC": ["Bidhnu", "Bilhaur", "Ghatampur", "Chaubepur", "Kalyanpur"]
+    },
+    "Bihar": {
+        "Patna APMC": ["Bihta", "Danapur", "Phulwari Sharif", "Mokama", "Barh"],
+        "Muzaffarpur APMC": ["Kanti", "Minapur", "Bochaha", "Sakra", "Gaighat"],
+        "Bhagalpur APMC": ["Naugachhia", "Kahalgaon", "Sultanganj", "Sabour", "Goradih"]
+    },
+    "Haryana": {
+        "Karnal APMC": ["Nilokheri", "Assandh", "Gharaunda", "Indri", "Kunjpura"],
+        "Hisar APMC": ["Hansi", "Narnaund", "Barwala", "Adampur", "Uklana"],
+        "Rohtak APMC": ["Meham", "Kalanaur", "Sampla", "Bansi", "Kharawar"]
+    }
+}
+
+# ================= STEP 1: FARMER REGISTRATION =================
+if not st.session_state.user_registered:
+    st.markdown(f'<div class="section-box">{t["reg_title"]}</div>', unsafe_allow_html=True)
+    
+    with st.form("reg_form"):
+        farmer_name = st.text_input(t["name_lbl"], placeholder="e.g. Mukesh Kumar")
+        identity_no = st.text_input(t["id_lbl"], type="password", max_chars=12, placeholder="Enter ID number")
+        mobile_no = st.text_input(t["mob_lbl"], max_chars=10, placeholder="10-digit mobile number")
+        
+        all_states = list(STATE_DISTRICTS.keys())
+        state_selected = st.selectbox(t["state_lbl"], all_states)
+        
+        dist_dict = STATE_DISTRICTS.get(state_selected, {"Main APMC": ["Main Village"]})
+        district = st.selectbox(t["dist_lbl"], list(dist_dict.keys()))
+        
+        village_list = dist_dict.get(district, ["Village A", "Village B"])
+        village = st.selectbox(t["vill_lbl"], village_list)
+
+        submit_reg = st.form_submit_button(t["reg_btn"], use_container_width=True, type="primary")
+
+        if submit_reg:
+            if len(mobile_no) == 10 and mobile_no.isdigit() and farmer_name.strip():
+                token_id = f"IND-{state_selected[:3].upper()}-{random.randint(10000, 99999)}"
+                st.session_state.user_registered = True
+                st.session_state.user_data = {
+                    "name": farmer_name, "mobile": mobile_no,
+                    "state": state_selected, "district": district,
+                    "village": village, "token_id": token_id
+                }
+                st.rerun()
+            else:
+                st.error("❌ Please enter a valid 10-digit mobile number and full name.")
+
+# ================= STEP 2: MAIN DASHBOARD =================
+else:
+    user = st.session_state.user_data
+    
+    st.markdown(f"""
+        <div class="pass-box">
+            <span style="background:#16A34A; color:white; padding:2px 10px; border-radius:10px; font-size:0.7rem; font-weight:700;">VERIFIED PASS</span>
+            <h2 style="color:#15803D; margin:8px 0 4px 0; font-size:1.3rem;">🆔 Token: {user['token_id']}</h2>
+            <p style="margin:2px 0; font-weight:600; color:#0F172A;">Farmer: {user['name']} | Village: {user['village']}</p>
+            <p style="margin:2px 0; color:#475569; font-size:0.8rem;">Center: {user['district']}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.sidebar.markdown(f"--- \n ### {t['nav']}")
+    choice = st.sidebar.radio("Select Module:", [
+        t['m1'], t['m2'], t['m3'], t['m4'], t['m5'], t['m6'], t['m7']
+    ], label_visibility="collapsed")
+
+    # Logout / Reset Button
+    st.sidebar.markdown("---")
+    if st.sidebar.button("🔄 Reset Profile", use_container_width=True):
+        st.session_state.user_registered = False
+        st.session_state.user_data = {}
+        st.rerun()
+
+    # --- MODULE 1: MULTI-CROP LIVE RATES & AI QUALITY GRADING ---
+    if choice == t['m1']:
+        st.markdown(f'<div class="section-box">🌾 Live Rates & Multi-Crop AI Check</div>', unsafe_allow_html=True)
+        st.success(f"🟢 Synced for {user['district']} ({user['village']})")
+        
+        crops_data = {
+            "Wheat (गेहूं)": {"modal": 2350, "min": 2280, "max": 2420},
+            "Paddy / Rice (धान)": {"modal": 2180, "min": 2100, "max": 2250},
+            "Maize (मक्का)": {"modal": 2090, "min": 2000, "max": 2160},
+            "Mustard (सरसों)": {"modal": 5650, "min": 5500, "max": 5800},
+            "Gram / Chana (चना)": {"modal": 5400, "min": 5250, "max": 5550},
+            "Cotton (कपास)": {"modal": 6800, "min": 6600, "max": 7050}
+        }
+        
+        selected_crop = st.selectbox("Select Crop:", list(crops_data.keys()))
+        c_info = crops_data[selected_crop]
+        
+        st.markdown(f"""
+            <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-left: 4px solid #16A34A; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                <h4 style="margin: 0 0 4px 0; color: #15803D;">{selected_crop}</h4>
+                <p style="margin: 2px 0;"><b>Modal Price:</b> ₹ {c_info['modal']} / Quintal</p>
+                <p style="margin: 2px 0; font-size: 0.8rem; color: #64748B;">Min: ₹ {c_info['min']} | Max: ₹ {c_info['max']}</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            moisture = st.slider("Moisture (%):", 5.0, 20.0, 12.0)
+        with col2:
+            impurity = st.slider("Impurity (%):", 0.0, 10.0, 1.0)
+            
+        if moisture <= 13.0 and impurity <= 2.0:
+            st.success("🌟 **AI Quality Grade:** Grade-A Premium (Top Price Eligibility)")
+        elif moisture <= 15.0 and impurity <= 5.0:
+            st.warning("⚠️ **AI Quality Grade:** Grade-B Standard (Minor Deduction)")
+        else:
+            st.error("❌ **AI Quality Grade:** Below Standard / Rejection Risk")
+
+    # --- MODULE 2: QUEUE & TRAFFIC HEATMAP ---
+    elif choice == t['m2']:
+        st.markdown(f'<div class="section-box">🗺️ Traffic & Queue Status</div>', unsafe_allow_html=True)
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Gate 1", "35%", delta="Normal")
+        c2.metric("Gate 2", "18%", delta="Clear")
+        c3.metric("Weighbridge", "65%", delta="Busy", delta_color="inverse")
+        st.success("✅ **Tip:** Gate 2 has minimum waiting time right now.")
+
+    # --- MODULE 3: SLOT BOOKING & GATE PASS ---
+    elif choice == t['m3']:
+        st.markdown(f'<div class="section-box">📱 Slot & Gate Pass</div>', unsafe_allow_html=True)
+        with st.form("slot_form"):
+            arr_date = st.date_input("Date:")
+            time_slot = st.selectbox("Time Window:", ["08:00 AM - 10:00 AM", "11:00 AM - 01:00 PM", "03:00 PM - 05:00 PM"])
+            submit_slot = st.form_submit_button("Generate Gate Pass 🎫", type="primary", use_container_width=True)
+            
+            if submit_slot:
+                st.session_state.slot_booked = True
+                st.session_state.slot_details = {
+                    "date": str(arr_date), "time": time_slot,
+                    "coupon_code": f"CPN-{random.randint(100000, 999999)}"
+                }
+
+        if st.session_state.slot_booked:
+            s_data = st.session_state.slot_details
+            st.markdown(f"""
+                <div style="background: #FFFFFF; border: 2px dashed #16A34A; padding: 14px; border-radius: 10px; margin-top: 10px;">
+                    <h3 style="color:#15803D; margin-top:0;">🎫 Entry Pass</h3>
+                    <p style="margin:2px 0;"><b>Token:</b> {user['token_id']}</p>
+                    <p style="margin:2px 0;"><b>Code:</b> <span style="background:#22C55E; color:white; padding:2px 6px; border-radius:4px;">{s_data['coupon_code']}</span></p>
+                    <p style="margin:2px 0;"><b>Slot:</b> {s_data['date']} ({s_data['time']})</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+    # --- MODULE 4: TRANSPORT & SMS BOOKING (DRIVER NUMBER FIXED) ---
+    elif choice == t['m4']:
+        st.markdown(f'<div class="section-box">🚚 Transport & SMS Booking</div>', unsafe_allow_html=True)
+        driver_fixed_num = "7254879397"
+        
+        with st.form("transport_form"):
+            t_type = st.selectbox("Vehicle Type:", ["Mini Truck (Tata Ace)", "Tractor Trolley", "Commercial Truck"])
+            pickup_loc = st.text_input("Village Pickup Address:", placeholder="e.g. Near Village Chaupal")
+            est_weight = st.number_input("Crop Weight (Quintals):", min_value=5, max_value=200, value=25)
+            
+            submit_transport = st.form_submit_button("Book Vehicle & Dispatch SMS 🚚📱", type="primary", use_container_width=True)
+            
+            if submit_transport:
+                st.session_state.transport_booked = True
+                st.session_state.transport_details = {
+                    "vehicle": t_type, "location": pickup_loc if pickup_loc else user['village'],
+                    "driver": "Ramesh Singh", "driver_phone": driver_fixed_num, "truck_no": f"HR-26-{random.randint(1000,9999)}"
+                }
+
+        if st.session_state.transport_booked:
+            td = st.session_state.transport_details
+            st.markdown(f"""
+                <div style="background: #F5F3FF; border: 1px solid #CBD5E1; border-left: 5px solid #7C3AED; padding: 12px; border-radius: 8px;">
+                    <h4 style="margin:0 0 4px 0; color:#6D28D9;">✅ Vehicle Booked & SMS Dispatched!</h4>
+                    <p style="margin:2px 0;"><b>Vehicle:</b> {td['vehicle']} ({td['truck_no']})</p>
+                    <p style="margin:2px 0;"><b>Driver Phone (SMS & WhatsApp):</b> <code>{td['driver_phone']}</code></p>
+                    <p style="margin:4px 0; font-size:0.85rem; color:#475569;">📱 Automated SMS Alert successfully sent to driver number <b>{td['driver_phone']}</b> for pickup at <b>{td['location']}</b>.</p>
+                    <a href="https://wa.me/91{td['driver_phone']}?text=Hello%20Driver,%20I%20have%20booked%20your%20transport%20for%20crop%20pickup%20at%20{td['location']}." target="_blank" style="display:inline-block; margin-top:8px; background:#25D366; color:white; padding:6px 12px; border-radius:6px; text-decoration:none; font-weight:600; font-size:0.85rem;">💬 Chat on WhatsApp ({td['driver_phone']})</a>
+                </div>
+            """, unsafe_allow_html=True)
+
+    # --- MODULE 5: VOICE ASSISTANT ---
+    elif choice == t['m5']:
+        st.markdown(f'<div class="section-box">🎙️ Voice Assistant</div>', unsafe_allow_html=True)
+        st.info("Speak or type your question.")
+        
+        audio_file = st.audio_input("Record Voice Question:")
+        user_query = st.text_input("Or Type Question:", placeholder="Type here...")
+        
+        if st.button("🔊 Play Audio Response", type="primary", use_container_width=True):
+            resp_text = user_query if user_query else "Your data is updated successfully."
+            st.success(f"**Response:** {resp_text}")
+            try:
+                from gtts import gTTS
+                tts = gTTS(text=resp_text, lang=curr_lang if curr_lang in LANG_PACK else 'en')
+                audio_bytes = BytesIO()
+                tts.write_to_fp(audio_bytes)
+                audio_bytes.seek(0)
+                st.audio(audio_bytes, format='audio/mp3', autoplay=True)
+            except Exception:
+                pass
+
+    # --- MODULE 6: TRANSPARENT DBT PAYMENT TRACKING ---
+    elif choice == t['m6']:
+        st.markdown(f'<div class="section-box">💳 DBT Payment Tracking</div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        | Stage | Status | Remarks |
+        | :--- | :--- | :--- |
+        | **1. Registration** | ✅ Done | Token `{user['token_id']}` |
+        | **2. Gate Entry** | ✅ Done | Verified at {user['district']} |
+        | **3. Quality & Sale** | ✅ Done | Grade-A Sold |
+        | **4. Bank Transfer (DBT)** | ⏳ Processing | Secure transfer in progress |
+        """)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.success("💳 **Status:** Funds will be credited to your Aadhaar-linked bank account within 24-48 hours.")
+
+    # --- MODULE 7: WEATHER FORECAST (CLEAN UI FIX) ---
+    elif choice == t['m7']:
+        st.markdown(f'<div class="section-box">🌤️ Weather Forecast & Advisory</div>', unsafe_allow_html=True)
+        st.success(f"🟢 Location: {user['village']}, {user['district']} ({user['state']})")
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Temperature", "32°C", "2°C")
+        col2.metric("Humidity", "58%", "-4%")
+        col3.metric("Rainfall Risk", "Low", "0 mm")
+        
+        # Clean st.info element used to prevent any raw HTML tag leakage in mobile browser views
+        st.info("🌾 **Farmer Advisory:** Weather conditions are optimal for harvesting and transporting crops to the mandi over the next 48 hours. No immediate rain expected.")
